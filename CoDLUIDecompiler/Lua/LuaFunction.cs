@@ -215,9 +215,41 @@ namespace CoDLUIDecompiler
                 this.Registers[i] = new LuaRegister(i);
             }
 
+            // Write the function header if it isnt the init function
             if (!this.isInitFunction)
             {
-                this.writeLine("Function start");
+                // Look if we have a inline function
+                if (inline)
+                {
+                    outputWriter.Write("function (");
+                }
+                else if (this.newName == null)
+                {
+                    write("local function " + String.Format("__FUNC_{0:X}_", this.startPosition) + "(", -1);
+                }
+                else
+                {
+                    write("function " + this.newName + "(", -1);
+                }
+                int argIndex = 0, fixedIndex = 0;
+                while (argIndex < this.parameterCount)
+                {
+                    if (this.Upvalues.Contains("arg" + fixedIndex))
+                    {
+                        fixedIndex++;
+                        continue;
+                    }
+                    this.Registers[argIndex].initialze("arg" + fixedIndex);
+                    outputWriter.Write(((argIndex > 0) ? ", " : "") + "arg" + fixedIndex++);
+                    argIndex++;
+                }
+                if (this.usesVarArg)
+                {
+                    if (this.parameterCount > 0)
+                        outputWriter.Write(", ");
+                    outputWriter.Write("...");
+                }
+                outputWriter.Write(")\n");
             }
 
             this.instructionPtr = 0;
@@ -232,7 +264,7 @@ namespace CoDLUIDecompiler
                     }
                     else
                     {
-                        this.writeLine(String.Format("data: {0} ({1}, {2}, {3}, 0x{4:X})",
+                        this.writeLine(String.Format("Unhandled OpCode: {0} ({1}, {2}, {3}, 0x{4:X})",
                             currentInstruction.OpCode,
                             currentInstruction.A,
                             currentInstruction.B,
@@ -245,6 +277,13 @@ namespace CoDLUIDecompiler
                     Console.WriteLine("Error @ " + this.instructionPtr + ": " + e.Message);
                 }
                 nextInstruction();
+            }
+
+            // Add an ending to the function
+            if (!this.isInitFunction)
+            {
+                writeLine("end", -1);
+                this.outputWriter.WriteLine();
             }
         }
 
@@ -260,6 +299,15 @@ namespace CoDLUIDecompiler
                 this.outputWriter.Write("\t");
             }
             this.outputWriter.Write(text + "\n");
+        }
+
+        public void write(string text, int extra = 0)
+        {
+            for (int i = 0; i < this.tabLevel + extra + this.endPositions.Count + this.tablePositions.Count; i++)
+            {
+                this.outputWriter.Write("\t");
+            }
+            this.outputWriter.Write(text);
         }
 
         private static byte GetBit(long input, int bit)

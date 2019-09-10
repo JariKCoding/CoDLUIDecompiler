@@ -117,8 +117,44 @@ namespace CoDLUIDecompiler
 
         public static Dictionary<LuaOpCode.OpCodes, Action<LuaFunction>> OPCodeFunctions = new Dictionary<LuaOpCode.OpCodes, Action<LuaFunction>>()
         {
+            { LuaOpCode.OpCodes.HKS_OPCODE_GETGLOBAL, OP_GetGlobal },
+            { LuaOpCode.OpCodes.HKS_OPCODE_MOVE, OP_Move },
+            { LuaOpCode.OpCodes.HKS_OPCODE_LOADK, OP_LoadK },
             { LuaOpCode.OpCodes.HKS_OPCODE_CLOSURE, OP_Closure },
         };
+
+        public static void OP_GetGlobal(LuaFunction function)
+        {
+            function.Registers[function.currentInstruction.A].changeTo(function.Constants[function.currentInstruction.Bx], true);
+#if DEBUG
+            function.writeLine(String.Format("-- r({0}) = g[{1}] // {2}",
+                function.currentInstruction.A,
+                function.currentInstruction.Bx,
+                function.Constants[function.currentInstruction.Bx].value));
+#endif
+        }
+
+        public static void OP_Move(LuaFunction function)
+        {
+            function.Registers[function.currentInstruction.A].value = function.Registers[function.currentInstruction.B].value;
+#if DEBUG
+            function.writeLine(String.Format("-- r({0}) = r({1}) // {2}",
+                function.currentInstruction.A,
+                function.currentInstruction.B,
+                function.Registers[function.currentInstruction.A].value));
+#endif
+        }
+
+        public static void OP_LoadK(LuaFunction function)
+        {
+            function.Registers[function.currentInstruction.A].changeTo(function.Constants[function.currentInstruction.Bx].getString());
+#if DEBUG
+            function.writeLine(String.Format("-- r({0}) = c[{1}] // {2}",
+                function.currentInstruction.A,
+                function.currentInstruction.Bx,
+                function.Registers[function.currentInstruction.A]));
+#endif
+        }
 
         public static void OP_Closure(LuaFunction function)
         {
