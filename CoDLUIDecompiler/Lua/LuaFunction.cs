@@ -198,7 +198,6 @@ namespace CoDLUIDecompiler
 
         private void readSubFunctions()
         {
-            Console.WriteLine(this.subFunctionCount);
             this.SubFunctions = new LuaFunction[this.subFunctionCount];
             for (int i = 0; i < this.subFunctionCount; i++)
             {
@@ -215,6 +214,19 @@ namespace CoDLUIDecompiler
             this.writeLine(String.Format("-- UpValue Count: 0x{0:X}", this.upValsCount));
             this.writeLine(String.Format("-- SubFuncs Count: 0x{0:X}", this.subFunctionCount));
 #endif
+            Console.WriteLine(String.Format("__FUNC_{0:X}_", this.startPosition));
+            FindWhileLoops();
+            FindDoWhileLoops();
+            FindIfStatements();
+            /*FindJumpBlocks();
+            FindForEachLoops();
+            FindForLoops();*/
+
+            for (int i = 0; i < this.instructionCount; i++)
+            {
+                this.Instructions[i].visited = false;
+            }
+
             this.tabLevel = tabLevel;
             this.Registers = new LuaRegister[this.registerCount];
             for (int i = 0; i < this.registerCount; i++)
@@ -265,6 +277,11 @@ namespace CoDLUIDecompiler
                 try
                 {
                     currentInstruction = this.Instructions[instructionPtr];
+                    if(currentInstruction.visited == true)
+                    {
+                        nextInstruction();
+                        continue;
+                    }
                     if(LuaOpCode.OPCodeFunctions.TryGetValue(currentInstruction.OpCode, out Action<LuaFunction> func))
                     {
                         func(this);
@@ -291,6 +308,84 @@ namespace CoDLUIDecompiler
             {
                 writeLine("end", -1);
                 this.outputWriter.WriteLine();
+            }
+        }
+
+        public void FindWhileLoops()
+        {
+            for(int i = 0; i < this.instructionCount; i++)
+            {
+                if(this.Instructions[i].OpCode == LuaOpCode.OpCodes.HKS_OPCODE_JMP)
+                {
+                    if(this.Instructions[i].sBx < 0 && i + this.Instructions[i].sBx >= 0)
+                    {
+                        if(LuaOpCode.isConditionOPCode(this, i + this.Instructions[i].sBx + 1))
+                        {
+                            Console.WriteLine("While @ " + i);
+                            this.Instructions[i].visited = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        public void FindDoWhileLoops()
+        {
+            for (int i = 0; i < this.instructionCount; i++)
+            {
+                if (this.Instructions[i].OpCode == LuaOpCode.OpCodes.HKS_OPCODE_JMP && this.Instructions[i].visited == false)
+                {
+                    if (this.Instructions[i].sBx < 0 && i + this.Instructions[i].sBx >= 0)
+                    {
+                        if (LuaOpCode.isConditionOPCode(this, i - 1))
+                        {
+                            Console.WriteLine("Do While @ " + i);
+                            this.Instructions[i].visited = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        public void FindIfStatements()
+        {
+            int lines = -1;
+            for (int i = 0; i < this.instructionCount; i++)
+            {
+                if (this.Instructions[i].OpCode == LuaOpCode.OpCodes.HKS_OPCODE_JMP && this.Instructions[i].visited == false)
+                {
+                    // Make sure the skip goes forward
+                    if (this.Instructions[i].sBx >= 0)
+                    {
+                        //Console.WriteLine(this.Instructions[i + this.Instructions[i].sBx].OpCode);
+                        if (LuaOpCode.isConditionOPCode(this, i - 1))
+                        {
+                            // Skip the while loops
+                            if (this.Instructions[i + this.Instructions[i].sBx].OpCode == LuaOpCode.OpCodes.HKS_OPCODE_JMP && this.Instructions[i + this.Instructions[i].sBx].sBx < 0)
+                            {
+                                continue;
+                            }
+                            // OR statement
+                            if(lines == 0)
+                            {
+                                Console.WriteLine("or");
+                                this.Instructions[i].visited = true;
+                                continue;
+                            }
+                            // and statement
+                            if(lines == this.Instructions[i].sBx)
+                            {
+                                Console.WriteLine("and");
+                                this.Instructions[i].visited = true;
+                                continue;
+                            }
+                            lines = this.Instructions[i].sBx;
+                            Console.WriteLine("if @ " + i);
+                            this.Instructions[i].visited = true;
+                        }
+                    }
+                }
+                lines--;
             }
         }
 

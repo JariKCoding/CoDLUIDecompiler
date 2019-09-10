@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="Games\BlackOps2.cs" />
     <Compile Include="Games\BlackOps3.cs" />
+    <Compile Include="Games\Ghosts.cs" />
     <Compile Include="Games\WorldWar2.cs" />
     <Compile Include="Lua\Datatype.cs" />
     <Compile Include="Lua\LuaConstant.cs" />
