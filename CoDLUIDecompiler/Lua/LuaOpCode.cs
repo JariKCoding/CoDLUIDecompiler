@@ -119,8 +119,13 @@ namespace CoDLUIDecompiler
         {
             { LuaOpCode.OpCodes.HKS_OPCODE_GETGLOBAL, OP_GetGlobal },
             { LuaOpCode.OpCodes.HKS_OPCODE_MOVE, OP_Move },
+            { LuaOpCode.OpCodes.HKS_OPCODE_RETURN, OP_Return },
+            { LuaOpCode.OpCodes.HKS_OPCODE_SETFIELD, OP_SetField },
             { LuaOpCode.OpCodes.HKS_OPCODE_LOADK, OP_LoadK },
+            { LuaOpCode.OpCodes.HKS_OPCODE_NEWTABLE, OP_NewTable },
             { LuaOpCode.OpCodes.HKS_OPCODE_CLOSURE, OP_Closure },
+            { LuaOpCode.OpCodes.HKS_OPCODE_GETFIELD_R1, OP_GetFieldR1 },
+            { LuaOpCode.OpCodes.HKS_OPCODE_DATA, OP_Data },
         };
 
         public static void OP_GetGlobal(LuaFunction function)
@@ -145,6 +150,38 @@ namespace CoDLUIDecompiler
 #endif
         }
 
+        public static void OP_Return(LuaFunction function)
+        {
+            // we dont want to write return at the end of every function, only if it actually does something
+            if (function.instructionPtr == function.instructionCount - 1)
+            {
+#if DEBUG
+                function.writeLine("-- return");
+#endif
+                return;
+            }
+            string returns = "";
+            if (function.currentInstruction.B > 1)
+            {
+                returns += function.Registers[function.currentInstruction.A].value;
+                for (int i = function.currentInstruction.A + 1; i <= function.currentInstruction.A + function.currentInstruction.B - 2; i++)
+                {
+                    returns += ", " + function.Registers[i];
+                }
+            }
+            function.writeLine("return " + returns);
+        }
+
+        public static void OP_SetField(LuaFunction function)
+        {
+            string cValue = getCValue(function);
+            function.writeLine(String.Format("{0}.{1} = {2}",
+                function.Registers[function.currentInstruction.A].value,
+                function.Constants[function.currentInstruction.B].value,
+                cValue
+            ));
+        }
+
         public static void OP_LoadK(LuaFunction function)
         {
             function.Registers[function.currentInstruction.A].changeTo(function.Constants[function.currentInstruction.Bx].getString());
@@ -156,12 +193,47 @@ namespace CoDLUIDecompiler
 #endif
         }
 
+        public static void OP_NewTable(LuaFunction function)
+        {
+            function.Registers[function.currentInstruction.A].makeLocalVariable();
+            function.writeLine(String.Format("{0}{1} = {2}",
+                (!function.Registers[function.currentInstruction.A].isInitialized) ? "local " : "",
+                function.Registers[function.currentInstruction.A].value, "{}"
+            ));
+            function.Registers[function.currentInstruction.A].isInitialized = true;
+            function.Registers[function.currentInstruction.A].globalValue = false;
+        }
+
         public static void OP_Closure(LuaFunction function)
         {
+            function.Registers[function.currentInstruction.A].value = String.Format("__FUNC_{0:X}_", function.SubFunctions[function.currentInstruction.Bx].startPosition);
+            function.Registers[function.currentInstruction.A].type = Datatype.Type.Function;
             long oldPos = function.inputReader.BaseStream.Position;
             function.inputReader.Seek(function.SubFunctions[function.currentInstruction.Bx].startPosition, SeekOrigin.Begin);
             function.SubFunctions[function.currentInstruction.Bx].decompile(function.tabLevel + function.endPositions.Count + function.tablePositions.Count + 1);
             function.inputReader.Seek(oldPos, SeekOrigin.Begin);
+        }
+
+        public static void OP_GetFieldR1(LuaFunction function)
+        {
+            function.Registers[function.currentInstruction.A].value = function.Registers[function.currentInstruction.B].value + "." + function.Constants[function.currentInstruction.C].value;
+        }
+
+        public static void OP_Data(LuaFunction function)
+        {
+
+        }
+
+        public static string getCValue(LuaFunction function)
+        {
+            if (function.currentInstruction.C > 255)
+            {
+                return function.Constants[function.currentInstruction.C - 256].getString();
+            }
+            else
+            {
+                return function.Registers[function.currentInstruction.C].value;
+            }
         }
     }
 }

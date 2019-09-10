@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Games\BlackOps2.cs" />
     <Compile Include="Games\BlackOps3.cs" />
     <Compile Include="Games\WorldWar2.cs" />
     <Compile Include="Lua\Datatype.cs" />

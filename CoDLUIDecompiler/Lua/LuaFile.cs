@@ -30,6 +30,7 @@ namespace CoDLUIDecompiler
 
         public enum SupportedGames
         {
+            BlackOps2,
             BlackOps3,
             WorldWar2,
         }
@@ -88,12 +89,17 @@ namespace CoDLUIDecompiler
         {
             this.OPCodeTable = BlackOps3.OPCodeTable;
             this.Game = SupportedGames.BlackOps3;
-            if (this.gameByte == 3)
+            if (this.compilerVersion == 0xD)
+            {
+                this.OPCodeTable = BlackOps2.OPCodeTable;
+                this.Game = SupportedGames.BlackOps2;
+            }
+            else if (this.gameByte == 3)
             {
                 this.OPCodeTable = WorldWar2.OPCodeTable;
                 this.Game = SupportedGames.WorldWar2;
             }
-            
+            Console.WriteLine(this.Game);
         }
 
         public void readInitFunction()

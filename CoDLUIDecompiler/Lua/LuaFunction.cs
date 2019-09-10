@@ -79,7 +79,10 @@ namespace CoDLUIDecompiler
             this.instructionCount = this.inputReader.ReadInt32();
 
             // Some unknown bytes (BO3 and BO4) almost 0
-            int weirdint = this.inputReader.ReadInt32();
+            if(this.luaFile.Game != LuaFile.SupportedGames.BlackOps2)
+            {
+                int weirdint = this.inputReader.ReadInt32();
+            }
 
             // Add extra bytes to make it line up
             int extra = 4 - ((int)this.inputReader.BaseStream.Position % 4);
@@ -95,7 +98,7 @@ namespace CoDLUIDecompiler
         private void readFooter()
         {
             int unkInt = this.inputReader.ReadInt32();
-            if (luaFile.Game == LuaFile.SupportedGames.BlackOps3)
+            if (luaFile.Game != LuaFile.SupportedGames.WorldWar2)
             {
                 float unkFloat = this.inputReader.ReadSingle();
             }
@@ -174,7 +177,10 @@ namespace CoDLUIDecompiler
                         break;
                     case Datatype.Type.String:
                         int stringLength = this.inputReader.ReadInt32();
-                        int unkInt = this.inputReader.ReadInt32();
+                        if(this.luaFile.Game != LuaFile.SupportedGames.BlackOps2)
+                        {
+                            int unkInt = this.inputReader.ReadInt32();
+                        }
                         constant.value = this.inputReader.ReadNullTerminatedString();
                         break;
                     case Datatype.Type.XHash:
@@ -192,6 +198,7 @@ namespace CoDLUIDecompiler
 
         private void readSubFunctions()
         {
+            Console.WriteLine(this.subFunctionCount);
             this.SubFunctions = new LuaFunction[this.subFunctionCount];
             for (int i = 0; i < this.subFunctionCount; i++)
             {
