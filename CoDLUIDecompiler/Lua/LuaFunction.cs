@@ -215,12 +215,11 @@ namespace CoDLUIDecompiler
             this.writeLine(String.Format("-- SubFuncs Count: 0x{0:X}", this.subFunctionCount));
 #endif
             Console.WriteLine(String.Format("__FUNC_{0:X}_", this.startPosition));
+
             FindWhileLoops();
             FindDoWhileLoops();
             FindIfStatements();
-            /*FindJumpBlocks();
-            FindForEachLoops();
-            FindForLoops();*/
+            FindForLoops();
 
             for (int i = 0; i < this.instructionCount; i++)
             {
@@ -386,6 +385,24 @@ namespace CoDLUIDecompiler
                     }
                 }
                 lines--;
+            }
+        }
+
+        public void FindForLoops()
+        {
+            for (int i = 0; i < this.instructionCount; i++)
+            {
+                if (this.Instructions[i].OpCode == LuaOpCode.OpCodes.HKS_OPCODE_JMP && this.Instructions[i].visited == false)
+                {
+                    if (this.Instructions[i].sBx < 0)
+                    {
+                        if(this.Instructions[i - 1].OpCode == LuaOpCode.OpCodes.HKS_OPCODE_TFORLOOP)
+                        {
+                            Console.WriteLine("foreach @ " + i);
+                            this.Instructions[i].visited = true;
+                        }
+                    }
+                }
             }
         }
 

@@ -8,7 +8,7 @@ namespace CoDLUIDecompiler
 {
     class LuaRegister
     {
-        public string value;
+        public string value = "";
         public int index;
         public Datatype.Type type;
         public bool globalValue;
