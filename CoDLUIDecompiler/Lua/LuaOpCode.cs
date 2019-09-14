@@ -120,6 +120,7 @@ namespace CoDLUIDecompiler
         public static Dictionary<LuaOpCode.OpCodes, Func<LuaFunction, string>> OPCodeFunctions = new Dictionary<LuaOpCode.OpCodes, Func<LuaFunction, string>>()
         {
             { LuaOpCode.OpCodes.HKS_OPCODE_GETFIELD, OP_GetField },
+            { LuaOpCode.OpCodes.HKS_OPCODE_TEST, OP_Test },
             { LuaOpCode.OpCodes.HKS_OPCODE_CALL_I, OP_Call_I },
             { LuaOpCode.OpCodes.HKS_OPCODE_EQ, OP_Eq },
             { LuaOpCode.OpCodes.HKS_OPCODE_GETGLOBAL, OP_GetGlobal },
@@ -130,7 +131,9 @@ namespace CoDLUIDecompiler
             { LuaOpCode.OpCodes.HKS_OPCODE_SETFIELD, OP_SetField },
             { LuaOpCode.OpCodes.HKS_OPCODE_LOADK, OP_LoadK },
             { LuaOpCode.OpCodes.HKS_OPCODE_LOADNIL, OP_LoadNil },
+            { LuaOpCode.OpCodes.HKS_OPCODE_SETGLOBAL, OP_SetGlobal },
             { LuaOpCode.OpCodes.HKS_OPCODE_JMP, OP_Jmp },
+            { LuaOpCode.OpCodes.HKS_OPCODE_GETUPVAL, OP_GetUpVal },
             { LuaOpCode.OpCodes.HKS_OPCODE_ADD, OP_Add },
             { LuaOpCode.OpCodes.HKS_OPCODE_ADD_BK, OP_AddBk },
             { LuaOpCode.OpCodes.HKS_OPCODE_SUB, OP_Sub },
@@ -147,7 +150,10 @@ namespace CoDLUIDecompiler
             { LuaOpCode.OpCodes.HKS_OPCODE_LT, OP_Lt },
             { LuaOpCode.OpCodes.HKS_OPCODE_LE, OP_Le },
             { LuaOpCode.OpCodes.HKS_OPCODE_CLOSURE, OP_Closure },
+            { LuaOpCode.OpCodes.HKS_OPCODE_CALL_I_R1, OP_Call_I },
+            { LuaOpCode.OpCodes.HKS_OPCODE_TEST_R1, OP_Test },
             { LuaOpCode.OpCodes.HKS_OPCODE_GETFIELD_R1, OP_GetFieldR1 },
+            { LuaOpCode.OpCodes.HKS_OPCODE_SETFIELD_R1, OP_SetField },
             { LuaOpCode.OpCodes.HKS_OPCODE_DATA, OP_Data },
             { LuaOpCode.OpCodes.HKS_OPCODE_GETGLOBAL_MEM, OP_GetGlobal },
         };
@@ -163,6 +169,13 @@ namespace CoDLUIDecompiler
                 function.Registers[function.currentInstruction.A].value));
 #endif
             return "";
+        }
+
+        public static string OP_Test(LuaFunction function)
+        {
+            return String.Format("{0}{1}",
+                (function.currentInstruction.C == 1) ? "not " : "",
+                function.Registers[function.currentInstruction.A].value);
         }
 
         public static string OP_Call_I(LuaFunction function)
@@ -385,12 +398,33 @@ namespace CoDLUIDecompiler
             return "";
         }
 
+        public static string OP_SetGlobal(LuaFunction function)
+        {
+            function.writeLine(String.Format("{0} = {1}",
+                function.Constants[function.currentInstruction.Bx].value,
+                function.Registers[function.currentInstruction.A].value
+            ));
+            return "";
+        }
+
         public static string OP_Jmp(LuaFunction function)
         {
 #if DEBUG
             function.writeLine(String.Format("-- skip the next [{0}] opcodes // advance {0} lines",
                 function.currentInstruction.sBx));
 #endif
+            return "";
+        }
+
+        public static string OP_GetUpVal(LuaFunction function)
+        {
+#if DEBUG
+            function.writeLine(String.Format("r({0}) = upval({1}) // {2}",
+                function.currentInstruction.A,
+                function.currentInstruction.B,
+                function.Upvalues[function.currentInstruction.B]));
+#endif
+            function.Registers[function.currentInstruction.A].value = function.Upvalues[function.currentInstruction.B];
             return "";
         }
 
@@ -484,6 +518,23 @@ namespace CoDLUIDecompiler
 
         public static string OP_Closure(LuaFunction function)
         {
+            int i = function.instructionPtr + 1;
+            while(i < function.instructionCount && function.Instructions[i].OpCode == OpCodes.HKS_OPCODE_DATA)
+            {
+                if (function.Instructions[i].A == 1)
+                {
+                    function.SubFunctions[function.currentInstruction.Bx].Upvalues.Add(function.Registers[function.Instructions[i].C].value);
+                }
+                else if (function.Instructions[i].A == 2)
+                {
+                    function.SubFunctions[function.currentInstruction.Bx].Upvalues.Add(function.Upvalues[function.Instructions[i].C]);
+                }
+                else
+                {
+                    Console.WriteLine("Closuse extra arg error: " + function.Instructions[i].A);
+                }
+                i++;
+            }
             function.Registers[function.currentInstruction.A].value = String.Format("__FUNC_{0:X}_", function.SubFunctions[function.currentInstruction.Bx].startPosition);
             function.Registers[function.currentInstruction.A].type = Datatype.Type.Function;
             long oldPos = function.inputReader.BaseStream.Position;
@@ -539,7 +590,7 @@ namespace CoDLUIDecompiler
         {
             OpCodes OpCode = function.Instructions[ptr].OpCode;
             if (OpCode == OpCodes.HKS_OPCODE_EQ || OpCode == OpCodes.HKS_OPCODE_EQ_BK || OpCode == OpCodes.HKS_OPCODE_LE || OpCode == OpCodes.HKS_OPCODE_LE_BK ||
-                OpCode == OpCodes.HKS_OPCODE_LT || OpCode == OpCodes.HKS_OPCODE_LT_BK)
+                OpCode == OpCodes.HKS_OPCODE_LT || OpCode == OpCodes.HKS_OPCODE_LT_BK || OpCode == OpCodes.HKS_OPCODE_TEST || OpCode == OpCodes.HKS_OPCODE_TEST_R1)
                 return true;
             return false;
         }

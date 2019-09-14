@@ -16,7 +16,7 @@ namespace CoDLUIDecompiler
             {
                 Console.WriteLine("Give the folder that you want to decompile: ");
                 string folder = Console.ReadLine();
-                folder = @"C:\Users\Jari\Documents\Github\CoDLUIDecompiler\CoDLUIDecompiler\bin\Debug";
+                folder = @"../Debug";
                 if (Directory.Exists(folder))
                 {
                     files = Directory.GetFiles(folder, "*.lua*", SearchOption.AllDirectories);
