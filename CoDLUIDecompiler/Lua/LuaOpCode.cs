@@ -149,6 +149,7 @@ namespace CoDLUIDecompiler
             { LuaOpCode.OpCodes.HKS_OPCODE_CLOSURE, OP_Closure },
             { LuaOpCode.OpCodes.HKS_OPCODE_GETFIELD_R1, OP_GetFieldR1 },
             { LuaOpCode.OpCodes.HKS_OPCODE_DATA, OP_Data },
+            { LuaOpCode.OpCodes.HKS_OPCODE_GETGLOBAL_MEM, OP_GetGlobal },
         };
 
         public static string OP_GetField(LuaFunction function)
