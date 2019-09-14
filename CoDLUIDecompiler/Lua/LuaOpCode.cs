@@ -131,8 +131,21 @@ namespace CoDLUIDecompiler
             { LuaOpCode.OpCodes.HKS_OPCODE_LOADK, OP_LoadK },
             { LuaOpCode.OpCodes.HKS_OPCODE_LOADNIL, OP_LoadNil },
             { LuaOpCode.OpCodes.HKS_OPCODE_JMP, OP_Jmp },
+            { LuaOpCode.OpCodes.HKS_OPCODE_ADD, OP_Add },
+            { LuaOpCode.OpCodes.HKS_OPCODE_ADD_BK, OP_AddBk },
+            { LuaOpCode.OpCodes.HKS_OPCODE_SUB, OP_Sub },
+            { LuaOpCode.OpCodes.HKS_OPCODE_SUB_BK, OP_SubBk },
+            { LuaOpCode.OpCodes.HKS_OPCODE_MUL, OP_Mul },
+            { LuaOpCode.OpCodes.HKS_OPCODE_MUL_BK, OP_MulBk },
+            { LuaOpCode.OpCodes.HKS_OPCODE_DIV, OP_Div },
+            { LuaOpCode.OpCodes.HKS_OPCODE_DIV_BK, OP_DivBk },
+            { LuaOpCode.OpCodes.HKS_OPCODE_MOD, OP_Mod },
+            { LuaOpCode.OpCodes.HKS_OPCODE_MOD_BK, OP_ModBk },
+            { LuaOpCode.OpCodes.HKS_OPCODE_POW, OP_Pow },
+            { LuaOpCode.OpCodes.HKS_OPCODE_POW_BK, OP_PowBk },
             { LuaOpCode.OpCodes.HKS_OPCODE_NEWTABLE, OP_NewTable },
             { LuaOpCode.OpCodes.HKS_OPCODE_LT, OP_Lt },
+            { LuaOpCode.OpCodes.HKS_OPCODE_LE, OP_Le },
             { LuaOpCode.OpCodes.HKS_OPCODE_CLOSURE, OP_Closure },
             { LuaOpCode.OpCodes.HKS_OPCODE_GETFIELD_R1, OP_GetFieldR1 },
             { LuaOpCode.OpCodes.HKS_OPCODE_DATA, OP_Data },
@@ -380,6 +393,66 @@ namespace CoDLUIDecompiler
             return "";
         }
 
+        public static string OP_Add(LuaFunction function)
+        {
+            return DoOperator(function, "+");
+        }
+
+        public static string OP_AddBk(LuaFunction function)
+        {
+            return DoOperatorBK(function, "+");
+        }
+
+        public static string OP_Sub(LuaFunction function)
+        {
+            return DoOperator(function, "-");
+        }
+
+        public static string OP_SubBk(LuaFunction function)
+        {
+            return DoOperatorBK(function, "-");
+        }
+
+        public static string OP_Mul(LuaFunction function)
+        {
+            return DoOperator(function, "*");
+        }
+
+        public static string OP_MulBk(LuaFunction function)
+        {
+            return DoOperatorBK(function, "*");
+        }
+
+        public static string OP_Div(LuaFunction function)
+        {
+            return DoOperator(function, "/");
+        }
+
+        public static string OP_DivBk(LuaFunction function)
+        {
+            return DoOperatorBK(function, "/");
+        }
+
+        public static string OP_Mod(LuaFunction function)
+        {
+            return DoOperator(function, "%");
+        }
+
+        public static string OP_ModBk(LuaFunction function)
+        {
+            return DoOperatorBK(function, "%");
+        }
+
+        public static string OP_Pow(LuaFunction function)
+        {
+            return DoOperator(function, "^");
+        }
+
+        public static string OP_PowBk(LuaFunction function)
+        {
+            return DoOperatorBK(function, "^");
+        }
+
         public static string OP_NewTable(LuaFunction function)
         {
             if(function.currentInstruction.B == 0 && function.currentInstruction.C == 0)
@@ -401,6 +474,11 @@ namespace CoDLUIDecompiler
         public static string OP_Lt(LuaFunction function)
         {
             return DoCondition(function, "<", ">=");
+        }
+
+        public static string OP_Le(LuaFunction function)
+        {
+            return DoCondition(function, "<=", ">");
         }
 
         public static string OP_Closure(LuaFunction function)
@@ -435,6 +513,25 @@ namespace CoDLUIDecompiler
             {
                 return function.Registers[function.currentInstruction.C].value;
             }
+        }
+
+        public static string DoOperator(LuaFunction function, string oper)
+        {
+            string cValue = getCValue(function);
+            function.Registers[function.currentInstruction.A].value = String.Format("({0} {1} {2})",
+                function.Registers[function.currentInstruction.B].value,
+                oper,
+                cValue);
+            return "";
+        }
+
+        public static string DoOperatorBK(LuaFunction function, string oper)
+        {
+            function.Registers[function.currentInstruction.A].value = String.Format("({0} {1} {2})",
+                function.Constants[function.currentInstruction.B].value,
+                oper,
+                function.Registers[function.currentInstruction.C].value);
+            return "";
         }
 
         public static bool isConditionOPCode(LuaFunction function, int ptr)
