@@ -150,6 +150,7 @@ namespace CoDLUIDecompiler
             { LuaOpCode.OpCodes.HKS_OPCODE_LT, OP_Lt },
             { LuaOpCode.OpCodes.HKS_OPCODE_LE, OP_Le },
             { LuaOpCode.OpCodes.HKS_OPCODE_CLOSURE, OP_Closure },
+            { LuaOpCode.OpCodes.HKS_OPCODE_VARARG, OP_VarArg },
             { LuaOpCode.OpCodes.HKS_OPCODE_CALL_I_R1, OP_Call_I },
             { LuaOpCode.OpCodes.HKS_OPCODE_TEST_R1, OP_Test },
             { LuaOpCode.OpCodes.HKS_OPCODE_GETFIELD_R1, OP_GetFieldR1 },
@@ -244,6 +245,12 @@ namespace CoDLUIDecompiler
             // We dont have return values
             else
             {
+                if(function.Instructions[function.instructionPtr + 1].OpCode == OpCodes.HKS_OPCODE_CALL_I ||
+                    function.Instructions[function.instructionPtr + 1].OpCode == OpCodes.HKS_OPCODE_CALL_I_R1)
+                {
+                    function.Registers[function.currentInstruction.A].value = funcName + "(" + parametersString + ")";
+                    return "";
+                }
                 function.writeLine(String.Format("{1}({2})",
                     (returnValueCount == -1) ? "return " : "", // if c = 0 it returns the value straight away
                     funcName,
@@ -518,6 +525,7 @@ namespace CoDLUIDecompiler
 
         public static string OP_Closure(LuaFunction function)
         {
+            // Setting up all the upvalues
             int i = function.instructionPtr + 1;
             while(i < function.instructionCount && function.Instructions[i].OpCode == OpCodes.HKS_OPCODE_DATA)
             {
@@ -535,12 +543,36 @@ namespace CoDLUIDecompiler
                 }
                 i++;
             }
+            // Put the name in the register
             function.Registers[function.currentInstruction.A].value = String.Format("__FUNC_{0:X}_", function.SubFunctions[function.currentInstruction.Bx].startPosition);
             function.Registers[function.currentInstruction.A].type = Datatype.Type.Function;
+
+            if ((function.Instructions[function.instructionPtr + 1].OpCode == OpCodes.HKS_OPCODE_SETFIELD || function.Instructions[function.instructionPtr + 1].OpCode == OpCodes.HKS_OPCODE_SETFIELD_R1) && function.Registers[function.Instructions[function.instructionPtr + 1].A].globalValue)
+            {
+                function.SubFunctions[function.currentInstruction.Bx].newName = String.Format("{0}.{1}",
+                    function.Registers[function.Instructions[function.instructionPtr + 1].A].value,
+                    function.Constants[function.Instructions[function.instructionPtr + 1].B].value
+                );
+                function.nextInstruction();
+            }
+            else if (function.Instructions[function.instructionPtr + 1].OpCode == OpCodes.HKS_OPCODE_SETGLOBAL)
+            {
+                function.SubFunctions[function.currentInstruction.Bx].newName = function.Constants[function.Instructions[function.instructionPtr + 1].Bx].value;
+                function.nextInstruction();
+            }
+            // Move to the new functions
             long oldPos = function.inputReader.BaseStream.Position;
             function.inputReader.Seek(function.SubFunctions[function.currentInstruction.Bx].startPosition, SeekOrigin.Begin);
+            // Start the function
             function.SubFunctions[function.currentInstruction.Bx].decompile(function.tabLevel + function.endPositions.Count + function.tablePositions.Count + 1);
+            // move back
             function.inputReader.Seek(oldPos, SeekOrigin.Begin);
+            return "";
+        }
+
+        public static string OP_VarArg(LuaFunction function)
+        {
+            function.Registers[function.currentInstruction.A].value = "...";
             return "";
         }
 
