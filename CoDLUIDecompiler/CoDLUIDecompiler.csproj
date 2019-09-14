@@ -48,6 +48,7 @@
     <Compile Include="Games\Ghosts.cs" />
     <Compile Include="Games\WorldWar2.cs" />
     <Compile Include="Lua\Datatype.cs" />
+    <Compile Include="Lua\LuaCondition.cs" />
     <Compile Include="Lua\LuaConstant.cs" />
     <Compile Include="Lua\LuaFile.cs" />
     <Compile Include="Lua\LuaFunction.cs" />

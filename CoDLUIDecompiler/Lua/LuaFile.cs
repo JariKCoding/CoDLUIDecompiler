@@ -96,6 +96,7 @@ namespace CoDLUIDecompiler
             }
             else if (this.gameByte == 3)
             {
+                //TODO: This is the same as iw7, ask user what game
                 this.OPCodeTable = WorldWar2.OPCodeTable;
                 this.Game = SupportedGames.WorldWar2;
             }

@@ -31,6 +31,8 @@ namespace CoDLUIDecompiler
         public List<int> elsePositions;
         public string orCondition;
 
+        public List<LuaCondition> conditions;
+
         public bool isInitFunction;
         public LuaFunction superFunction;
         public int tabLevel;
@@ -89,6 +91,7 @@ namespace CoDLUIDecompiler
             if (extra > 0 && extra < 4)
                 this.inputReader.ReadBytes(extra);
 
+            this.conditions = new List<LuaCondition>();
             this.tablePositions = new List<int>();
             this.endPositions = new List<int>();
             this.elsePositions = new List<int>();
@@ -276,12 +279,13 @@ namespace CoDLUIDecompiler
                 try
                 {
                     currentInstruction = this.Instructions[instructionPtr];
-                    if(currentInstruction.visited == true)
+                    
+                    if(HasCondition() || currentInstruction.visited == true)
                     {
                         nextInstruction();
                         continue;
                     }
-                    if(LuaOpCode.OPCodeFunctions.TryGetValue(currentInstruction.OpCode, out Action<LuaFunction> func))
+                    if(LuaOpCode.OPCodeFunctions.TryGetValue(currentInstruction.OpCode, out Func<LuaFunction, string> func))
                     {
                         func(this);
                     }
@@ -293,6 +297,21 @@ namespace CoDLUIDecompiler
                             currentInstruction.B,
                             currentInstruction.C,
                             (int)currentInstruction.OpCode));
+                    }
+                    foreach (LuaCondition condition in this.conditions)
+                    {
+                        if (condition.line == this.instructionPtr)
+                        {
+                            if (condition.type == LuaCondition.Type.End)
+                            {
+                                this.tabLevel--;
+                                this.writeLine("end");
+                            }
+                            else if (condition.type == LuaCondition.Type.Else)
+                            {
+                                this.writeLine("else", -1);
+                            }
+                        }
                     }
                 }
                 catch(Exception e)
@@ -307,6 +326,86 @@ namespace CoDLUIDecompiler
             {
                 writeLine("end", -1);
                 this.outputWriter.WriteLine();
+            }
+        }
+
+        public bool HasCondition()
+        {
+            foreach(LuaCondition condition in this.conditions)
+            {
+                if(condition.line == this.instructionPtr && condition.prefix == LuaCondition.Prefix.none)
+                {
+                    if(condition.type == LuaCondition.Type.Else || condition.type == LuaCondition.Type.End)
+                    {
+                        continue;
+                    }
+
+                    string expression = BuildExpression(condition);
+                    if(condition.type == LuaCondition.Type.If)
+                    {
+                        this.writeLine(String.Format("if {0} then", expression));
+                        this.tabLevel++;
+                    }
+                    else if(condition.type == LuaCondition.Type.DoWhile)
+                    {
+                        this.writeLine(String.Format("until {0}", expression));
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public string BuildExpression(LuaCondition masterCondition)
+        {
+            string Expression = ProcessInstructionReturnString();
+            nextInstruction();
+            int ChildExpressions = 0;
+            foreach (LuaCondition condition in this.conditions)
+            {
+                if(condition.master == masterCondition)
+                {
+                    ChildExpressions++;
+                }
+            }
+            while(ChildExpressions > 0 && this.instructionPtr < this.instructionCount)
+            {
+                bool done = false;
+                currentInstruction = this.Instructions[instructionPtr];
+                foreach (LuaCondition condition in this.conditions)
+                {
+                    if (condition.master == masterCondition && condition.line == this.instructionPtr)
+                    {
+                        Expression += String.Format(" {0} ", condition.prefix);
+                        Expression += ProcessInstructionReturnString();
+                        ChildExpressions--;
+                        done = true;
+                    }
+                }
+                if (!done)
+                {
+                    ProcessInstructionReturnString();
+                }
+                nextInstruction();
+                
+            }
+            return Expression;
+        }
+
+        public string ProcessInstructionReturnString()
+        {
+            if (LuaOpCode.OPCodeFunctions.TryGetValue(currentInstruction.OpCode, out Func<LuaFunction, string> func))
+            {
+                return func(this);
+            }
+            else
+            {
+                return (String.Format("Unhandled OpCode: {0} ({1}, {2}, {3}, 0x{4:X})",
+                    currentInstruction.OpCode,
+                    currentInstruction.A,
+                    currentInstruction.B,
+                    currentInstruction.C,
+                    (int)currentInstruction.OpCode));
             }
         }
 
@@ -349,6 +448,7 @@ namespace CoDLUIDecompiler
         public void FindIfStatements()
         {
             int lines = -1;
+            LuaCondition master = null;
             for (int i = 0; i < this.instructionCount; i++)
             {
                 if (this.Instructions[i].OpCode == LuaOpCode.OpCodes.HKS_OPCODE_JMP && this.Instructions[i].visited == false)
@@ -367,17 +467,23 @@ namespace CoDLUIDecompiler
                             // OR statement
                             if(lines == 0)
                             {
+                                this.conditions.Add(new LuaCondition(i - 1, LuaCondition.Type.If, LuaCondition.Prefix.or, master));
                                 Console.WriteLine("or");
                                 this.Instructions[i].visited = true;
+                                lines--;
                                 continue;
                             }
                             // and statement
                             if(lines == this.Instructions[i].sBx)
                             {
+                                this.conditions.Add(new LuaCondition(i - 1, LuaCondition.Type.If, LuaCondition.Prefix.and, master));
                                 Console.WriteLine("and");
                                 this.Instructions[i].visited = true;
+                                lines--;
                                 continue;
                             }
+                            master = new LuaCondition(i - 1, LuaCondition.Type.If, LuaCondition.Prefix.none);
+                            this.conditions.Add(master);
                             lines = this.Instructions[i].sBx;
                             Console.WriteLine("if @ " + i);
                             this.Instructions[i].visited = true;
@@ -385,6 +491,36 @@ namespace CoDLUIDecompiler
                     }
                 }
                 lines--;
+            }
+            List<LuaCondition> newConditions = new List<LuaCondition>();
+            foreach (LuaCondition condition in this.conditions)
+            {
+                if(condition.master == null)
+                {
+                    LuaCondition lastSon = condition;
+                    foreach (LuaCondition conditionSon in this.conditions)
+                    {
+                        if(conditionSon.master == condition)
+                        {
+                            lastSon = conditionSon;
+                        }
+                    }
+                    int skipLines = this.Instructions[lastSon.line + 1].sBx;
+                    if(this.Instructions[lastSon.line + 1 + skipLines].OpCode == LuaOpCode.OpCodes.HKS_OPCODE_JMP)
+                    {
+                        newConditions.Add(new LuaCondition(lastSon.line + 1 + skipLines, LuaCondition.Type.Else));
+                        int skipElseLines = this.Instructions[lastSon.line + 1 + skipLines].sBx;
+                        newConditions.Add(new LuaCondition(lastSon.line + 1 + skipLines + skipElseLines, LuaCondition.Type.End));
+                    }
+                    else
+                    {
+                        newConditions.Add(new LuaCondition(lastSon.line + 1 + skipLines, LuaCondition.Type.End));
+                    }
+                }
+            }
+            foreach (LuaCondition condition in newConditions)
+            {
+                this.conditions.Add(condition);
             }
         }
 

@@ -11,8 +11,8 @@ namespace CoDLUIDecompiler
         public string value = "";
         public int index;
         public Datatype.Type type;
-        public bool globalValue;
-        public bool isInitialized;
+        public bool globalValue = false;
+        public bool isInitialized = false;
 
         public LuaRegister(int index)
         {
