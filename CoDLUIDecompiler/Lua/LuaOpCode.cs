@@ -127,8 +127,10 @@ namespace CoDLUIDecompiler
             { LuaOpCode.OpCodes.HKS_OPCODE_MOVE, OP_Move },
             { LuaOpCode.OpCodes.HKS_OPCODE_SELF, OP_Self },
             { LuaOpCode.OpCodes.HKS_OPCODE_RETURN, OP_Return },
+            { LuaOpCode.OpCodes.HKS_OPCODE_GETTABLE_S, OP_GetTableS },
             { LuaOpCode.OpCodes.HKS_OPCODE_LOADBOOL, OP_LoadBool },
             { LuaOpCode.OpCodes.HKS_OPCODE_SETFIELD, OP_SetField },
+            { LuaOpCode.OpCodes.HKS_OPCODE_SETTABLE_S, OP_SetTableS },
             { LuaOpCode.OpCodes.HKS_OPCODE_LOADK, OP_LoadK },
             { LuaOpCode.OpCodes.HKS_OPCODE_LOADNIL, OP_LoadNil },
             { LuaOpCode.OpCodes.HKS_OPCODE_SETGLOBAL, OP_SetGlobal },
@@ -149,6 +151,7 @@ namespace CoDLUIDecompiler
             { LuaOpCode.OpCodes.HKS_OPCODE_NEWTABLE, OP_NewTable },
             { LuaOpCode.OpCodes.HKS_OPCODE_LT, OP_Lt },
             { LuaOpCode.OpCodes.HKS_OPCODE_LE, OP_Le },
+            { LuaOpCode.OpCodes.HKS_OPCODE_CONCAT, OP_ConCat },
             { LuaOpCode.OpCodes.HKS_OPCODE_CLOSURE, OP_Closure },
             { LuaOpCode.OpCodes.HKS_OPCODE_VARARG, OP_VarArg },
             { LuaOpCode.OpCodes.HKS_OPCODE_CALL_I_R1, OP_Call_I },
@@ -350,6 +353,20 @@ namespace CoDLUIDecompiler
             return "";
         }
 
+        public static string OP_GetTableS(LuaFunction function)
+        {
+            string cValue = getCValue(function);
+            function.Registers[function.currentInstruction.A].value = function.Registers[function.currentInstruction.B].value + "[" + cValue + "]";
+#if DEBUG
+            function.writeLine(String.Format("-- r({0}) = r({1})[{2}] // {3}",
+                function.currentInstruction.A,
+                function.currentInstruction.B,
+                (function.currentInstruction.C > 255) ? String.Format("c[{0}]", function.currentInstruction.C - 256) : String.Format("r({0})", function.currentInstruction.C),
+                function.Registers[function.currentInstruction.A].value));
+#endif
+            return "";
+        }
+
         public static string OP_LoadBool(LuaFunction function)
         {
             if (function.currentInstruction.B == 0)
@@ -377,6 +394,17 @@ namespace CoDLUIDecompiler
             return "";
         }
 
+        public static string OP_SetTableS(LuaFunction function)
+        {
+            string cValue = getCValue(function);
+            function.writeLine(String.Format("{0}[{1}] = {2}",
+                function.Registers[function.currentInstruction.A].value,
+                function.Registers[function.currentInstruction.B].value,
+                cValue
+            ));
+            return "";
+        }
+        
         public static string OP_LoadK(LuaFunction function)
         {
             function.Registers[function.currentInstruction.A].changeTo(function.Constants[function.currentInstruction.Bx].getString());
@@ -426,7 +454,7 @@ namespace CoDLUIDecompiler
         public static string OP_GetUpVal(LuaFunction function)
         {
 #if DEBUG
-            function.writeLine(String.Format("r({0}) = upval({1}) // {2}",
+            function.writeLine(String.Format("-- r({0}) = upval({1}) // {2}",
                 function.currentInstruction.A,
                 function.currentInstruction.B,
                 function.Upvalues[function.currentInstruction.B]));
@@ -521,6 +549,26 @@ namespace CoDLUIDecompiler
         public static string OP_Le(LuaFunction function)
         {
             return DoCondition(function, "<=", ">");
+        }
+
+        public static string OP_ConCat(LuaFunction function)
+        {
+            string output = "(" + function.Registers[function.currentInstruction.B].value;
+            string registers = "r(" + function.currentInstruction.B + ")";
+            for (int i = function.currentInstruction.B + 1; i <= function.currentInstruction.C; i++)
+            {
+                output += " .. " + function.Registers[i].value;
+                registers += "..r(" + i + ")";
+            }
+            output += ")";
+            function.Registers[function.currentInstruction.A].value = output;
+#if DEBUG
+            function.writeLine(String.Format("-- r({0}) = {1} // {2}",
+                function.currentInstruction.A,
+                registers,
+                function.Registers[function.currentInstruction.A].value));
+#endif
+            return "";
         }
 
         public static string OP_Closure(LuaFunction function)

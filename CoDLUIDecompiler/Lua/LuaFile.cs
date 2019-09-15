@@ -96,11 +96,11 @@ namespace CoDLUIDecompiler
             }
             else if (this.gameByte == 3)
             {
-                //TODO: This is the same as iw7, ask user what game
+                // OPCode table is the same for IW but
+                // Same opcodetable as bo2 but has some structure differences
                 this.OPCodeTable = WorldWar2.OPCodeTable;
                 this.Game = SupportedGames.WorldWar2;
             }
-            Console.WriteLine(this.Game);
         }
 
         public void readInitFunction()

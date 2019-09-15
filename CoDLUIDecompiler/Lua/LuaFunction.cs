@@ -217,7 +217,6 @@ namespace CoDLUIDecompiler
             this.writeLine(String.Format("-- UpValue Count: 0x{0:X}", this.upValsCount));
             this.writeLine(String.Format("-- SubFuncs Count: 0x{0:X}", this.subFunctionCount));
 #endif
-            Console.WriteLine(String.Format("__FUNC_{0:X}_", this.startPosition));
 
             FindWhileLoops();
             FindDoWhileLoops();
@@ -316,7 +315,7 @@ namespace CoDLUIDecompiler
                 }
                 catch(Exception e)
                 {
-                    Console.WriteLine("Error @ " + this.instructionPtr + ": " + e.Message);
+                    Console.WriteLine("Error @ " + this.instructionPtr + ": " + e.Message + " & " + this.Instructions[instructionPtr].OpCode);
                 }
                 nextInstruction();
             }
@@ -419,7 +418,6 @@ namespace CoDLUIDecompiler
                     {
                         if(LuaOpCode.isConditionOPCode(this, i + this.Instructions[i].sBx + 1))
                         {
-                            Console.WriteLine("While @ " + i);
                             this.Instructions[i].visited = true;
                         }
                     }
@@ -437,7 +435,6 @@ namespace CoDLUIDecompiler
                     {
                         if (LuaOpCode.isConditionOPCode(this, i - 1))
                         {
-                            Console.WriteLine("Do While @ " + i);
                             this.Instructions[i].visited = true;
                         }
                     }
@@ -468,7 +465,6 @@ namespace CoDLUIDecompiler
                             if(lines == 0)
                             {
                                 this.conditions.Add(new LuaCondition(i - 1, LuaCondition.Type.If, LuaCondition.Prefix.or, master));
-                                Console.WriteLine("or");
                                 this.Instructions[i].visited = true;
                                 lines--;
                                 continue;
@@ -477,7 +473,6 @@ namespace CoDLUIDecompiler
                             if(lines == this.Instructions[i].sBx)
                             {
                                 this.conditions.Add(new LuaCondition(i - 1, LuaCondition.Type.If, LuaCondition.Prefix.and, master));
-                                Console.WriteLine("and");
                                 this.Instructions[i].visited = true;
                                 lines--;
                                 continue;
@@ -485,7 +480,6 @@ namespace CoDLUIDecompiler
                             master = new LuaCondition(i - 1, LuaCondition.Type.If, LuaCondition.Prefix.none);
                             this.conditions.Add(master);
                             lines = this.Instructions[i].sBx;
-                            Console.WriteLine("if @ " + i);
                             this.Instructions[i].visited = true;
                         }
                     }
@@ -534,7 +528,6 @@ namespace CoDLUIDecompiler
                     {
                         if(this.Instructions[i - 1].OpCode == LuaOpCode.OpCodes.HKS_OPCODE_TFORLOOP)
                         {
-                            Console.WriteLine("foreach @ " + i);
                             this.Instructions[i].visited = true;
                         }
                     }
