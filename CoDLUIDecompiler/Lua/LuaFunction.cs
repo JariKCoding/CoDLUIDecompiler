@@ -221,7 +221,7 @@ namespace CoDLUIDecompiler
             FindWhileLoops();
             FindDoWhileLoops();
             FindIfStatements();
-            FindForLoops();
+            FindForEachLoops();
 
             for (int i = 0; i < this.instructionCount; i++)
             {
@@ -339,6 +339,21 @@ namespace CoDLUIDecompiler
                         continue;
                     }
 
+                    if (condition.type == LuaCondition.Type.Foreach)
+                    {
+                        int baseVal = this.Instructions[this.instructionPtr + this.currentInstruction.C + 2].A + 3;
+                        this.Registers[baseVal].value = "index" + baseVal;
+                        this.Registers[baseVal + 1].value = "value" + (baseVal + 1);
+                        this.writeLine(String.Format("for {0},{1} in {2}, {3}, {4} do", 
+                            this.Registers[baseVal].value, 
+                            this.Registers[baseVal + 1].value, 
+                            this.Registers[baseVal - 3].value, 
+                            this.Registers[baseVal - 2].value,
+                            this.Registers[baseVal - 1].value));
+                        this.tabLevel++;
+                        continue;
+                    }
+
                     string expression = BuildExpression(condition);
                     if(condition.type == LuaCondition.Type.If)
                     {
@@ -453,7 +468,6 @@ namespace CoDLUIDecompiler
                     // Make sure the skip goes forward
                     if (this.Instructions[i].sBx >= 0)
                     {
-                        //Console.WriteLine(this.Instructions[i + this.Instructions[i].sBx].OpCode);
                         if (LuaOpCode.isConditionOPCode(this, i - 1))
                         {
                             // Skip the while loops
@@ -518,7 +532,7 @@ namespace CoDLUIDecompiler
             }
         }
 
-        public void FindForLoops()
+        public void FindForEachLoops()
         {
             for (int i = 0; i < this.instructionCount; i++)
             {
@@ -529,6 +543,9 @@ namespace CoDLUIDecompiler
                         if(this.Instructions[i - 1].OpCode == LuaOpCode.OpCodes.HKS_OPCODE_TFORLOOP)
                         {
                             this.Instructions[i].visited = true;
+                            
+                            this.conditions.Add(new LuaCondition(i + this.Instructions[i].sBx, LuaCondition.Type.Foreach));
+                            this.conditions.Add(new LuaCondition(i, LuaCondition.Type.End));
                         }
                     }
                 }
