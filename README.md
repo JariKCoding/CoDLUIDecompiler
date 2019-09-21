@@ -1,7 +1,7 @@
 # Overview
 [![Releases](https://img.shields.io/github/downloads/JariKCoding/CoDLUIDecompiler/total.svg)](https://github.com/JariKCoding/CoDLUIDecompiler/) [![Discord](https://img.shields.io/badge/chat-Discord-blue.svg)](https://discord.gg/yU2Pje6)
 
-**CoDLUIDecompiler** is a lua decompiler for Havok Scripts from various Call Of Duty games. It's main purpose is to provide access to scripts that Treyarch did not provide in the Call of Duty: Black Ops III Mod Tools and to give greater insight into how Treyarch achieved certain things, undocumented APIs, etc.
+**CoDLUIDecompiler** is a lua decompiler for Havok Scripts from various Call Of Duty games. It's main purpose is to provide access to scripts that Treyarch did not provide in the Call of Duty: Black Ops III Mod Tools and to give greater insight into how Treyarch achieved certain things, rebuild menus from the game, etc.
 
 Supports following games out of the box: **BlackOps2**, **BlackOps3**, **BlackOps4**, **InfiniteWarfare**, **WorldWar2**
 
