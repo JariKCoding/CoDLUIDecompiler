@@ -510,6 +510,13 @@ namespace CoDLUIDecompiler
                     {
                         if(conditionSon.master == condition)
                         {
+                            if(conditionSon.prefix == LuaCondition.Prefix.or)
+                            {
+                                if (this.Instructions[lastSon.line].A == 1)
+                                    this.Instructions[lastSon.line].A = 0;
+                                else
+                                    this.Instructions[lastSon.line].A = 1;
+                            }
                             lastSon = conditionSon;
                         }
                     }
