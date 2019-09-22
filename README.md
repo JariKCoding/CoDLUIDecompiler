@@ -16,7 +16,6 @@ Supports following games out of the box: **BlackOps2**, **BlackOps3**, **BlackOp
 
 ### What can be improved
 
-- Support for more games
 - Condition/Loop detection
 
 ### How to Use 
