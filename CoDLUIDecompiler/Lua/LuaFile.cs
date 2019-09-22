@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using PhilLibX.IO;
 
 namespace CoDLUIDecompiler
 {
@@ -98,6 +99,11 @@ namespace CoDLUIDecompiler
             {
                 // OPCode table is the same for IW but
                 // Same opcodetable as bo2 but has some structure differences
+                this.OPCodeTable = WorldWar2.OPCodeTable;
+                this.Game = SupportedGames.WorldWar2;
+            }
+            if (this.compilerVersion == 0xD && this.gameByte == 3)
+            {
                 this.OPCodeTable = WorldWar2.OPCodeTable;
                 this.Game = SupportedGames.WorldWar2;
             }

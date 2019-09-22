@@ -14,6 +14,7 @@ namespace CoDLUIDecompiler
             string[] files = new string[1];
             if (args.Length == 0)
             {
+                MemoryLoading.LoadGame();
                 Console.WriteLine("Give the folder that you want to decompile: ");
                 string folder = Console.ReadLine();
                 //folder = @"../Debug";

@@ -8,10 +8,11 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>CoDLUIDecompiler</RootNamespace>
     <AssemblyName>CoDLUIDecompiler</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -22,9 +23,10 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -47,6 +49,15 @@
     <Compile Include="Games\BlackOps3.cs" />
     <Compile Include="Games\Ghosts.cs" />
     <Compile Include="Games\WorldWar2.cs" />
+    <Compile Include="LuaRipper\Games\AdvancedWarfare.cs" />
+    <Compile Include="LuaRipper\Games\BlackOps2.cs" />
+    <Compile Include="LuaRipper\Games\BlackOps3.cs" />
+    <Compile Include="LuaRipper\Games\BlackOps4.cs" />
+    <Compile Include="LuaRipper\Games\Ghosts.cs" />
+    <Compile Include="LuaRipper\Games\InfiniteWarfare.cs" />
+    <Compile Include="LuaRipper\Games\ModernWarfareRM.cs" />
+    <Compile Include="LuaRipper\Games\WorldWarII.cs" />
+    <Compile Include="LuaRipper\MemoryLoading.cs" />
     <Compile Include="Lua\Datatype.cs" />
     <Compile Include="Lua\LuaCondition.cs" />
     <Compile Include="Lua\LuaConstant.cs" />
@@ -57,7 +68,13 @@
     <Compile Include="Lua\LuaRegister.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Util\IOExtensions.cs" />
+    <Compile Include="Util\PhilLibX\ByteUtil.cs" />
+    <Compile Include="Util\PhilLibX\IO\IOExtensions.cs" />
+    <Compile Include="Util\PhilLibX\MathUtilities.cs" />
+    <Compile Include="Util\PhilLibX\IO\MemoryUtil.cs" />
+    <Compile Include="Util\PhilLibX\NativeMethods.cs" />
+    <Compile Include="Util\PhilLibX\Printer.cs" />
+    <Compile Include="Util\PhilLibX\IO\ProcessReader.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -28,7 +28,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace CoDLUIDecompiler
+namespace PhilLibX.IO
 {
     /// <summary>
     /// IO Utilities/Extensions
